@@ -58,3 +58,74 @@ impl Output {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn output_with_fields(fields: &[&str]) -> Output {
+        Output::new(true, fields.iter().map(|s| s.to_string()).collect())
+    }
+
+    fn output_all_fields() -> Output {
+        Output::new(true, vec![])
+    }
+
+    #[test]
+    fn filter_fields_empty_returns_value_unchanged() {
+        let out = output_all_fields();
+        let v = json!({"a": 1, "b": 2});
+        assert_eq!(out.filter_fields(v.clone()), v);
+    }
+
+    #[test]
+    fn filter_fields_on_object() {
+        let out = output_with_fields(&["product_name", "brands"]);
+        let v = json!({"product_name": "Nutella", "brands": "Ferrero", "nutriscore_grade": "e"});
+        let result = out.filter_fields(v);
+        assert_eq!(result, json!({"product_name": "Nutella", "brands": "Ferrero"}));
+    }
+
+    #[test]
+    fn filter_fields_on_flat_array() {
+        let out = output_with_fields(&["code"]);
+        let v = json!([{"code": "123", "name": "A"}, {"code": "456", "name": "B"}]);
+        let result = out.filter_fields(v);
+        assert_eq!(result, json!([{"code": "123"}, {"code": "456"}]));
+    }
+
+    #[test]
+    fn filter_fields_preserves_pagination_envelope() {
+        let out = output_with_fields(&["code", "product_name"]);
+        let v = json!({
+            "count": 100,
+            "page": 1,
+            "page_count": 5,
+            "page_size": 20,
+            "skip": 0,
+            "products": [
+                {"code": "123", "product_name": "A", "brands": "X"},
+                {"code": "456", "product_name": "B", "brands": "Y"}
+            ]
+        });
+        let result = out.filter_fields(v);
+        // Envelope keys preserved
+        assert_eq!(result["count"], 100);
+        assert_eq!(result["page"], 1);
+        assert_eq!(result["page_count"], 5);
+        assert_eq!(result["page_size"], 20);
+        assert_eq!(result["skip"], 0);
+        // Items filtered
+        assert_eq!(result["products"][0], json!({"code": "123", "product_name": "A"}));
+        assert_eq!(result["products"][1], json!({"code": "456", "product_name": "B"}));
+    }
+
+    #[test]
+    fn filter_fields_non_object_passthrough() {
+        let out = output_with_fields(&["x"]);
+        assert_eq!(out.filter_fields(json!(42)), json!(42));
+        assert_eq!(out.filter_fields(json!("hello")), json!("hello"));
+        assert_eq!(out.filter_fields(json!(null)), json!(null));
+    }
+}
