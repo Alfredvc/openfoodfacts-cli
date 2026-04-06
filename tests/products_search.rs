@@ -217,3 +217,98 @@ async fn search_multiple_filters_v2() {
     let json: Value = serde_json::from_slice(&output).unwrap();
     assert_eq!(json["products"][0]["code"], "999");
 }
+
+#[tokio::test]
+async fn search_all_with_query_fetches_multiple_pages_v1() {
+    let server = setup().await;
+
+    Mock::given(method("GET"))
+        .and(path("/cgi/search.pl"))
+        .and(query_param("search_terms", "pasta"))
+        .and(query_param("page", "1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(search_page(1, 2, vec![product("aaa", "Pasta A")])),
+        )
+        .mount(&server)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/cgi/search.pl"))
+        .and(query_param("search_terms", "pasta"))
+        .and(query_param("page", "2"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(search_page(2, 2, vec![product("bbb", "Pasta B")])),
+        )
+        .mount(&server)
+        .await;
+
+    let output = cmd(&server)
+        .args(["products", "search", "--query", "pasta", "--all"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let json: Value = serde_json::from_slice(&output).unwrap();
+    assert!(json.is_array());
+    let arr = json.as_array().unwrap();
+    assert_eq!(arr.len(), 2);
+    assert_eq!(arr[0]["code"], "aaa");
+    assert_eq!(arr[1]["code"], "bbb");
+}
+
+#[tokio::test]
+async fn search_sort_by_passed_to_v2() {
+    let server = setup().await;
+
+    Mock::given(method("GET"))
+        .and(path("/api/v2/search"))
+        .and(query_param("sort_by", "unique_scans_n"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(search_page(1, 1, vec![product("sorted", "Top Product")])),
+        )
+        .mount(&server)
+        .await;
+
+    let output = cmd(&server)
+        .args(["products", "search", "--sort-by", "unique_scans_n"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let json: Value = serde_json::from_slice(&output).unwrap();
+    assert_eq!(json["products"][0]["code"], "sorted");
+}
+
+#[tokio::test]
+async fn search_sort_by_passed_to_v1() {
+    let server = setup().await;
+
+    Mock::given(method("GET"))
+        .and(path("/cgi/search.pl"))
+        .and(query_param("search_terms", "chocolate"))
+        .and(query_param("sort_by", "last_modified_t"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(search_page(1, 1, vec![product("recent", "Recent Choc")])),
+        )
+        .mount(&server)
+        .await;
+
+    let output = cmd(&server)
+        .args(["products", "search", "--query", "chocolate", "--sort-by", "last_modified_t"])
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
+
+    let json: Value = serde_json::from_slice(&output).unwrap();
+    assert_eq!(json["products"][0]["code"], "recent");
+}
