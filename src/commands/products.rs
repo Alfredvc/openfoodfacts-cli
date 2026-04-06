@@ -10,8 +10,21 @@ pub async fn run(command: &ProductsCommand, client: &Client, output: &Output) ->
     }
 }
 
-async fn get(_barcode: &str, _client: &Client, _output: &Output) -> Result<()> {
-    bail!("not yet implemented")
+async fn get(barcode: &str, client: &Client, output: &Output) -> Result<()> {
+    let path = format!("/api/v2/product/{}.json", barcode);
+    let body = client.get(&path, &[]).await?;
+
+    let status = body.get("status").and_then(|v| v.as_u64()).unwrap_or(0);
+    if status == 0 {
+        bail!("product not found: {}", barcode);
+    }
+
+    let product = body
+        .get("product")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null);
+    output.print(&product);
+    Ok(())
 }
 
 async fn search(_command: &ProductsCommand, _client: &Client, _output: &Output) -> Result<()> {
