@@ -10,8 +10,8 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> Result<Self> {
-        let base_url = std::env::var("OFF_BASE_URL")
-            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let base_url =
+            std::env::var("OFF_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
         let base_url = base_url.trim_end_matches('/').to_string();
         let user_agent = format!(
             "openfoodfacts-cli/{} (https://github.com/alfredvc/openfoodfacts-cli)",
@@ -45,6 +45,9 @@ impl Client {
             bail!("API error: HTTP {status}");
         }
 
-        response.json::<Value>().await.context("failed to parse JSON response")
+        response
+            .json::<Value>()
+            .await
+            .context("failed to parse JSON response")
     }
 }

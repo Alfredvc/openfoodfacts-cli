@@ -1,7 +1,7 @@
-use anyhow::{bail, Result};
 use crate::cli::FacetsCommand;
 use crate::client::Client;
 use crate::output::Output;
+use anyhow::{bail, Result};
 
 const VALID_FACET_TYPES: &[&str] = &[
     "categories",

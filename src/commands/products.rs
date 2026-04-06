@@ -35,10 +35,12 @@ async fn get(barcode: &str, client: &Client, output: &Output) -> Result<()> {
         bail!("product not found: {}", barcode);
     }
 
-    let product = body
-        .get("product")
-        .cloned()
-        .ok_or_else(|| anyhow::anyhow!("API returned success status but no product data for: {}", barcode))?;
+    let product = body.get("product").cloned().ok_or_else(|| {
+        anyhow::anyhow!(
+            "API returned success status but no product data for: {}",
+            barcode
+        )
+    })?;
     output.print(&product);
     Ok(())
 }
@@ -85,17 +87,28 @@ async fn search_v2(p: &SearchParams<'_>, client: &Client, output: &Output) -> Re
     let page_str = p.page.to_string();
     let page_size_str = p.page_size.to_string();
 
-    let mut params: Vec<(&str, &str)> = vec![
-        ("page", &page_str),
-        ("page_size", &page_size_str),
-    ];
-    if let Some(v) = p.category { params.push(("categories_tags", v)); }
-    if let Some(v) = p.nutrition_grade { params.push(("nutrition_grades_tags", v)); }
-    if let Some(v) = p.ecoscore_grade { params.push(("ecoscore_tags", v)); }
-    if let Some(v) = p.label { params.push(("labels_tags", v)); }
-    if let Some(v) = p.ingredient { params.push(("ingredients_tags", v)); }
-    if let Some(v) = p.allergen { params.push(("allergens_tags", v)); }
-    if let Some(v) = p.sort_by { params.push(("sort_by", v)); }
+    let mut params: Vec<(&str, &str)> = vec![("page", &page_str), ("page_size", &page_size_str)];
+    if let Some(v) = p.category {
+        params.push(("categories_tags", v));
+    }
+    if let Some(v) = p.nutrition_grade {
+        params.push(("nutrition_grades_tags", v));
+    }
+    if let Some(v) = p.ecoscore_grade {
+        params.push(("ecoscore_tags", v));
+    }
+    if let Some(v) = p.label {
+        params.push(("labels_tags", v));
+    }
+    if let Some(v) = p.ingredient {
+        params.push(("ingredients_tags", v));
+    }
+    if let Some(v) = p.allergen {
+        params.push(("allergens_tags", v));
+    }
+    if let Some(v) = p.sort_by {
+        params.push(("sort_by", v));
+    }
 
     if p.all {
         let all_products = fetch_all_pages("/api/v2/search", &params, client).await?;
@@ -107,7 +120,11 @@ async fn search_v2(p: &SearchParams<'_>, client: &Client, output: &Output) -> Re
     Ok(())
 }
 
-async fn fetch_all_pages(path: &str, base_params: &[(&str, &str)], client: &Client) -> Result<Vec<Value>> {
+async fn fetch_all_pages(
+    path: &str,
+    base_params: &[(&str, &str)],
+    client: &Client,
+) -> Result<Vec<Value>> {
     let filtered_params: Vec<(&str, &str)> = base_params
         .iter()
         .filter(|(k, _)| *k != "page")
@@ -153,7 +170,9 @@ async fn search_v1(p: &SearchParams<'_>, client: &Client, output: &Output) -> Re
         ("page", &page_str),
         ("page_size", &page_size_str),
     ];
-    if let Some(v) = p.sort_by { params.push(("sort_by", v)); }
+    if let Some(v) = p.sort_by {
+        params.push(("sort_by", v));
+    }
 
     // Map filter flags to v1 tagtype triplets
     let filters: Vec<(&str, &str)> = [

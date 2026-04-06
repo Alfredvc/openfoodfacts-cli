@@ -8,7 +8,10 @@ pub struct Output {
 
 impl Output {
     pub fn new(force_compact: bool, fields: Vec<String>) -> Self {
-        Self { force_compact, fields }
+        Self {
+            force_compact,
+            fields,
+        }
     }
 
     pub fn print(&self, value: &Value) {
@@ -84,7 +87,10 @@ mod tests {
         let out = output_with_fields(&["product_name", "brands"]);
         let v = json!({"product_name": "Nutella", "brands": "Ferrero", "nutriscore_grade": "e"});
         let result = out.filter_fields(v);
-        assert_eq!(result, json!({"product_name": "Nutella", "brands": "Ferrero"}));
+        assert_eq!(
+            result,
+            json!({"product_name": "Nutella", "brands": "Ferrero"})
+        );
     }
 
     #[test]
@@ -118,8 +124,14 @@ mod tests {
         assert_eq!(result["skip"], 0);
         // Items filtered
         assert_eq!(result["products"].as_array().unwrap().len(), 2);
-        assert_eq!(result["products"][0], json!({"code": "123", "product_name": "A"}));
-        assert_eq!(result["products"][1], json!({"code": "456", "product_name": "B"}));
+        assert_eq!(
+            result["products"][0],
+            json!({"code": "123", "product_name": "A"})
+        );
+        assert_eq!(
+            result["products"][1],
+            json!({"code": "456", "product_name": "B"})
+        );
     }
 
     #[test]
