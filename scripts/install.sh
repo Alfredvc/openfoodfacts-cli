@@ -27,7 +27,11 @@ URL="https://github.com/${REPO}/releases/download/${LATEST}/${ARTIFACT}.tar.gz"
 
 echo "Installing ${BINARY} ${LATEST} for ${OS_NAME}/${ARCH_NAME}..."
 mkdir -p "$INSTALL_DIR"
-curl -fsSL "$URL" | tar -xz -C "$INSTALL_DIR" "$BINARY"
+if ! curl -fsSL "$URL" | tar -xz -C "$INSTALL_DIR" "$BINARY"; then
+  echo "Error: Failed to download or extract ${ARTIFACT}.tar.gz" >&2
+  echo "Check that a release exists for ${OS_NAME}/${ARCH_NAME}" >&2
+  exit 1
+fi
 chmod +x "${INSTALL_DIR}/${BINARY}"
 echo "Installed to ${INSTALL_DIR}/${BINARY}"
 
