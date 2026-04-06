@@ -117,8 +117,26 @@ mod tests {
         assert_eq!(result["page_size"], 20);
         assert_eq!(result["skip"], 0);
         // Items filtered
+        assert_eq!(result["products"].as_array().unwrap().len(), 2);
         assert_eq!(result["products"][0], json!({"code": "123", "product_name": "A"}));
         assert_eq!(result["products"][1], json!({"code": "456", "product_name": "B"}));
+    }
+
+    #[test]
+    fn filter_fields_nonexistent_field_returns_empty_object() {
+        let out = output_with_fields(&["nonexistent"]);
+        let v = json!({"a": 1, "b": 2});
+        let result = out.filter_fields(v);
+        assert_eq!(result, json!({}));
+    }
+
+    #[test]
+    fn filter_fields_empty_products_array() {
+        let out = output_with_fields(&["code", "product_name"]);
+        let v = json!({"count": 0, "page": 1, "page_count": 0, "page_size": 20, "skip": 0, "products": []});
+        let result = out.filter_fields(v);
+        assert_eq!(result["count"], 0);
+        assert_eq!(result["products"].as_array().unwrap().len(), 0);
     }
 
     #[test]
