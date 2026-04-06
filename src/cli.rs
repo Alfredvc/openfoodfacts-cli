@@ -66,7 +66,7 @@ pub enum ProductsCommand {
         #[arg(long, default_value = "1")]
         page: u32,
         /// Items per page (default: 20, max: 100)
-        #[arg(long, default_value = "20")]
+        #[arg(long, default_value = "20", value_parser = clap::value_parser!(u32).range(1..=100))]
         page_size: u32,
         /// Fetch all pages and return a flat array
         #[arg(long)]
