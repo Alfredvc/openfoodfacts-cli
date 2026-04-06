@@ -106,6 +106,31 @@ async fn products_get_with_fields() {
 }
 
 #[tokio::test]
+async fn products_get_missing_product_key() {
+    let server = setup().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v2/product/1234567890123.json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "status": 1,
+            "status_verbose": "product found"
+            // no "product" key
+        })))
+        .mount(&server)
+        .await;
+
+    let output = cmd(&server)
+        .args(["products", "get", "1234567890123"])
+        .assert()
+        .failure()
+        .get_output()
+        .stderr
+        .clone();
+
+    let json: Value = serde_json::from_slice(&output).unwrap();
+    assert!(json["error"].as_str().unwrap().contains("no product data"));
+}
+
+#[tokio::test]
 async fn products_get_rate_limited() {
     let server = setup().await;
     Mock::given(method("GET"))

@@ -24,7 +24,7 @@ async fn get(barcode: &str, client: &Client, output: &Output) -> Result<()> {
     let product = body
         .get("product")
         .cloned()
-        .unwrap_or(serde_json::Value::Null);
+        .ok_or_else(|| anyhow::anyhow!("API returned success status but no product data for: {}", barcode))?;
     output.print(&product);
     Ok(())
 }
@@ -106,7 +106,7 @@ async fn search_v2(
     ];
     if let Some(v) = category { params.push(("categories_tags", v)); }
     if let Some(v) = nutrition_grade { params.push(("nutrition_grades_tags", v)); }
-    if let Some(v) = ecoscore_grade { params.push(("ecoscore_grade_tags", v)); }
+    if let Some(v) = ecoscore_grade { params.push(("ecoscore_tags", v)); }
     if let Some(v) = label { params.push(("labels_tags", v)); }
     if let Some(v) = ingredient { params.push(("ingredients_tags", v)); }
     if let Some(v) = allergen { params.push(("allergens_tags", v)); }
