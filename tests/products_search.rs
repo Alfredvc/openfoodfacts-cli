@@ -34,10 +34,11 @@ async fn search_filter_only_uses_v2() {
     Mock::given(method("GET"))
         .and(path("/api/v2/search"))
         .and(query_param("categories_tags", "en:chocolates"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("123", "Dark Choc")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("123", "Dark Choc")],
+        )))
         .mount(&server)
         .await;
 
@@ -61,10 +62,11 @@ async fn search_query_only_uses_v1() {
         .and(path("/cgi/search.pl"))
         .and(query_param("search_terms", "chocolate"))
         .and(query_param("json", "1"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("456", "Choc Bar")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("456", "Choc Bar")],
+        )))
         .mount(&server)
         .await;
 
@@ -90,15 +92,23 @@ async fn search_query_with_filter_uses_v1_tagtype_syntax() {
         .and(query_param("tag_contains_0", "contains"))
         .and(query_param("tag_0", "a"))
         .and(query_param("json", "1"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("789", "Healthy Biscuit")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("789", "Healthy Biscuit")],
+        )))
         .mount(&server)
         .await;
 
     let output = cmd(&server)
-        .args(["products", "search", "--query", "biscuit", "--nutrition-grade", "a"])
+        .args([
+            "products",
+            "search",
+            "--query",
+            "biscuit",
+            "--nutrition-grade",
+            "a",
+        ])
         .assert()
         .success()
         .get_output()
@@ -114,13 +124,11 @@ async fn search_fields_preserves_envelope() {
     let server = setup().await;
     Mock::given(method("GET"))
         .and(path("/api/v2/search"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(search_page(
-                1,
-                1,
-                vec![product("111", "Thing"), product("222", "Other")],
-            )),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("111", "Thing"), product("222", "Other")],
+        )))
         .mount(&server)
         .await;
 
@@ -139,7 +147,10 @@ async fn search_fields_preserves_envelope() {
     assert_eq!(json["page_count"], 1);
     assert_eq!(json["page_size"], 20);
     // Items filtered
-    assert_eq!(json["products"][0], json!({"code": "111", "product_name": "Thing"}));
+    assert_eq!(
+        json["products"][0],
+        json!({"code": "111", "product_name": "Thing"})
+    );
     assert!(json["products"][0].get("brands").is_none());
 }
 
@@ -151,10 +162,11 @@ async fn search_all_fetches_multiple_pages() {
     Mock::given(method("GET"))
         .and(path("/api/v2/search"))
         .and(query_param("page", "1"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 2, vec![product("111", "A")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            2,
+            vec![product("111", "A")],
+        )))
         .mount(&server)
         .await;
 
@@ -162,10 +174,11 @@ async fn search_all_fetches_multiple_pages() {
     Mock::given(method("GET"))
         .and(path("/api/v2/search"))
         .and(query_param("page", "2"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(2, 2, vec![product("222", "B")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            2,
+            2,
+            vec![product("222", "B")],
+        )))
         .mount(&server)
         .await;
 
@@ -194,19 +207,24 @@ async fn search_multiple_filters_v2() {
         .and(query_param("categories_tags", "en:chocolates"))
         .and(query_param("nutrition_grades_tags", "a"))
         .and(query_param("labels_tags", "en:organic"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("999", "Organic Dark Choc")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("999", "Organic Dark Choc")],
+        )))
         .mount(&server)
         .await;
 
     let output = cmd(&server)
         .args([
-            "products", "search",
-            "--category", "en:chocolates",
-            "--nutrition-grade", "a",
-            "--label", "en:organic",
+            "products",
+            "search",
+            "--category",
+            "en:chocolates",
+            "--nutrition-grade",
+            "a",
+            "--label",
+            "en:organic",
         ])
         .assert()
         .success()
@@ -226,10 +244,11 @@ async fn search_all_with_query_fetches_multiple_pages_v1() {
         .and(path("/cgi/search.pl"))
         .and(query_param("search_terms", "pasta"))
         .and(query_param("page", "1"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 2, vec![product("aaa", "Pasta A")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            2,
+            vec![product("aaa", "Pasta A")],
+        )))
         .mount(&server)
         .await;
 
@@ -237,10 +256,11 @@ async fn search_all_with_query_fetches_multiple_pages_v1() {
         .and(path("/cgi/search.pl"))
         .and(query_param("search_terms", "pasta"))
         .and(query_param("page", "2"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(2, 2, vec![product("bbb", "Pasta B")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            2,
+            2,
+            vec![product("bbb", "Pasta B")],
+        )))
         .mount(&server)
         .await;
 
@@ -267,10 +287,11 @@ async fn search_sort_by_passed_to_v2() {
     Mock::given(method("GET"))
         .and(path("/api/v2/search"))
         .and(query_param("sort_by", "unique_scans_n"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("sorted", "Top Product")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("sorted", "Top Product")],
+        )))
         .mount(&server)
         .await;
 
@@ -294,15 +315,23 @@ async fn search_sort_by_passed_to_v1() {
         .and(path("/cgi/search.pl"))
         .and(query_param("search_terms", "chocolate"))
         .and(query_param("sort_by", "last_modified_t"))
-        .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(search_page(1, 1, vec![product("recent", "Recent Choc")])),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(search_page(
+            1,
+            1,
+            vec![product("recent", "Recent Choc")],
+        )))
         .mount(&server)
         .await;
 
     let output = cmd(&server)
-        .args(["products", "search", "--query", "chocolate", "--sort-by", "last_modified_t"])
+        .args([
+            "products",
+            "search",
+            "--query",
+            "chocolate",
+            "--sort-by",
+            "last_modified_t",
+        ])
         .assert()
         .success()
         .get_output()

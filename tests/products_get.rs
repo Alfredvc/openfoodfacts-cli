@@ -69,7 +69,10 @@ async fn products_get_not_found() {
         .clone();
 
     let json: Value = serde_json::from_slice(&output).unwrap();
-    assert!(json["error"].as_str().unwrap().contains("product not found"));
+    assert!(json["error"]
+        .as_str()
+        .unwrap()
+        .contains("product not found"));
     assert!(json["error"].as_str().unwrap().contains("0000000000000"));
 }
 
@@ -92,7 +95,13 @@ async fn products_get_with_fields() {
         .await;
 
     let output = cmd(&server)
-        .args(["--fields", "product_name,brands", "products", "get", "3017624010701"])
+        .args([
+            "--fields",
+            "product_name,brands",
+            "products",
+            "get",
+            "3017624010701",
+        ])
         .assert()
         .success()
         .get_output()
