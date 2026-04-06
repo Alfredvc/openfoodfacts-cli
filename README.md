@@ -1,4 +1,4 @@
-# openfoodfacts
+# openfoodfacts CLI
 
 [![CI](https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml)
 [![Latest Release](https://img.shields.io/github/v/release/alfredvc/openfoodfacts-cli)](https://github.com/alfredvc/openfoodfacts-cli/releases/latest)
