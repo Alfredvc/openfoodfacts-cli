@@ -159,3 +159,19 @@ Open Food Facts is a free public API with no authentication. The limits are gene
 | Facets | 2 req/min |
 
 If you need to fetch many products, use `--all` with search rather than individual barcode lookups.
+
+## Agent Skills
+
+Install skills for AI coding agents (Claude Code, Cursor, Gemini CLI, etc.):
+
+```bash
+npx skills add alfredvc/openfoodfacts-cli
+```
+
+This installs workflow-oriented instruction files that teach agents how to use the CLI. Available skills:
+
+- **openfoodfacts-shared** — Output format, error handling, rate limits, and invocation patterns
+- **openfoodfacts-product-lookup** — Look up products by barcode, search with filters, full-text search
+- **openfoodfacts-data-exploration** — Discover valid tag IDs via facets, then build filtered searches
+
+See [AGENTS.md](AGENTS.md) for the agent-specific command reference.
