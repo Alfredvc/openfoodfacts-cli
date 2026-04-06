@@ -106,14 +106,14 @@ async fn search_v2(
     ];
     if let Some(v) = category { params.push(("categories_tags", v)); }
     if let Some(v) = nutrition_grade { params.push(("nutrition_grades_tags", v)); }
-    if let Some(v) = ecoscore_grade { params.push(("ecoscore_tags", v)); }
+    if let Some(v) = ecoscore_grade { params.push(("ecoscore_grade_tags", v)); }
     if let Some(v) = label { params.push(("labels_tags", v)); }
     if let Some(v) = ingredient { params.push(("ingredients_tags", v)); }
     if let Some(v) = allergen { params.push(("allergens_tags", v)); }
     if let Some(v) = sort_by { params.push(("sort_by", v)); }
 
     if all {
-        let all_products = fetch_all_pages_v2(&params, client).await?;
+        let all_products = fetch_all_pages("/api/v2/search", &params, client).await?;
         output.print(&Value::Array(all_products));
     } else {
         let body = client.get("/api/v2/search", &params).await?;
@@ -122,10 +122,7 @@ async fn search_v2(
     Ok(())
 }
 
-async fn fetch_all_pages_v2(
-    base_params: &[(&str, &str)],
-    client: &Client,
-) -> Result<Vec<Value>> {
+async fn fetch_all_pages(path: &str, base_params: &[(&str, &str)], client: &Client) -> Result<Vec<Value>> {
     let filtered_params: Vec<(&str, &str)> = base_params
         .iter()
         .filter(|(k, _)| *k != "page")
@@ -136,7 +133,7 @@ async fn fetch_all_pages_v2(
     let mut params = filtered_params.clone();
     params.push(("page", &page_str_1));
 
-    let first = client.get("/api/v2/search", &params).await?;
+    let first = client.get(path, &params).await?;
     let page_count = first
         .get("page_count")
         .and_then(|v| v.as_u64())
@@ -147,7 +144,7 @@ async fn fetch_all_pages_v2(
         let page_num = p.to_string();
         let mut page_params = filtered_params.clone();
         page_params.push(("page", &page_num));
-        let body = client.get("/api/v2/search", &page_params).await?;
+        let body = client.get(path, &page_params).await?;
         all.extend(extract_products(&body));
     }
     Ok(all)
@@ -213,42 +210,11 @@ async fn search_v1(
     params.extend(tag_params.iter().copied());
 
     if all {
-        let all_products = fetch_all_pages_v1(&params, client).await?;
+        let all_products = fetch_all_pages("/cgi/search.pl", &params, client).await?;
         output.print(&Value::Array(all_products));
     } else {
         let body = client.get("/cgi/search.pl", &params).await?;
         output.print(&body);
     }
     Ok(())
-}
-
-async fn fetch_all_pages_v1(
-    base_params: &[(&str, &str)],
-    client: &Client,
-) -> Result<Vec<Value>> {
-    let filtered_params: Vec<(&str, &str)> = base_params
-        .iter()
-        .filter(|(k, _)| *k != "page")
-        .copied()
-        .collect();
-
-    let page_str_1 = "1".to_string();
-    let mut params = filtered_params.clone();
-    params.push(("page", &page_str_1));
-
-    let first = client.get("/cgi/search.pl", &params).await?;
-    let page_count = first
-        .get("page_count")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(1);
-    let mut all: Vec<Value> = extract_products(&first);
-
-    for p in 2..=page_count {
-        let page_num = p.to_string();
-        let mut page_params = filtered_params.clone();
-        page_params.push(("page", &page_num));
-        let body = client.get("/cgi/search.pl", &page_params).await?;
-        all.extend(extract_products(&body));
-    }
-    Ok(all)
 }
