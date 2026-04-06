@@ -5,6 +5,20 @@ use crate::cli::ProductsCommand;
 use crate::client::Client;
 use crate::output::Output;
 
+struct SearchParams<'a> {
+    query: Option<&'a str>,
+    category: Option<&'a str>,
+    nutrition_grade: Option<&'a str>,
+    ecoscore_grade: Option<&'a str>,
+    label: Option<&'a str>,
+    ingredient: Option<&'a str>,
+    allergen: Option<&'a str>,
+    sort_by: Option<&'a str>,
+    page: u32,
+    page_size: u32,
+    all: bool,
+}
+
 pub async fn run(command: &ProductsCommand, client: &Client, output: &Output) -> Result<()> {
     match command {
         ProductsCommand::Get { barcode } => get(barcode, client, output).await,
@@ -47,72 +61,43 @@ async fn search(command: &ProductsCommand, client: &Client, output: &Output) -> 
         unreachable!()
     };
 
-    if let Some(q) = query {
-        search_v1(
-            q,
-            category.as_deref(),
-            nutrition_grade.as_deref(),
-            ecoscore_grade.as_deref(),
-            label.as_deref(),
-            ingredient.as_deref(),
-            allergen.as_deref(),
-            sort_by.as_deref(),
-            *page,
-            *page_size,
-            *all,
-            client,
-            output,
-        )
-        .await
+    let params = SearchParams {
+        query: query.as_deref(),
+        category: category.as_deref(),
+        nutrition_grade: nutrition_grade.as_deref(),
+        ecoscore_grade: ecoscore_grade.as_deref(),
+        label: label.as_deref(),
+        ingredient: ingredient.as_deref(),
+        allergen: allergen.as_deref(),
+        sort_by: sort_by.as_deref(),
+        page: *page,
+        page_size: *page_size,
+        all: *all,
+    };
+    if params.query.is_some() {
+        search_v1(&params, client, output).await
     } else {
-        search_v2(
-            category.as_deref(),
-            nutrition_grade.as_deref(),
-            ecoscore_grade.as_deref(),
-            label.as_deref(),
-            ingredient.as_deref(),
-            allergen.as_deref(),
-            sort_by.as_deref(),
-            *page,
-            *page_size,
-            *all,
-            client,
-            output,
-        )
-        .await
+        search_v2(&params, client, output).await
     }
 }
 
-async fn search_v2(
-    category: Option<&str>,
-    nutrition_grade: Option<&str>,
-    ecoscore_grade: Option<&str>,
-    label: Option<&str>,
-    ingredient: Option<&str>,
-    allergen: Option<&str>,
-    sort_by: Option<&str>,
-    page: u32,
-    page_size: u32,
-    all: bool,
-    client: &Client,
-    output: &Output,
-) -> Result<()> {
-    let page_str = page.to_string();
-    let page_size_str = page_size.to_string();
+async fn search_v2(p: &SearchParams<'_>, client: &Client, output: &Output) -> Result<()> {
+    let page_str = p.page.to_string();
+    let page_size_str = p.page_size.to_string();
 
     let mut params: Vec<(&str, &str)> = vec![
         ("page", &page_str),
         ("page_size", &page_size_str),
     ];
-    if let Some(v) = category { params.push(("categories_tags", v)); }
-    if let Some(v) = nutrition_grade { params.push(("nutrition_grades_tags", v)); }
-    if let Some(v) = ecoscore_grade { params.push(("ecoscore_tags", v)); }
-    if let Some(v) = label { params.push(("labels_tags", v)); }
-    if let Some(v) = ingredient { params.push(("ingredients_tags", v)); }
-    if let Some(v) = allergen { params.push(("allergens_tags", v)); }
-    if let Some(v) = sort_by { params.push(("sort_by", v)); }
+    if let Some(v) = p.category { params.push(("categories_tags", v)); }
+    if let Some(v) = p.nutrition_grade { params.push(("nutrition_grades_tags", v)); }
+    if let Some(v) = p.ecoscore_grade { params.push(("ecoscore_tags", v)); }
+    if let Some(v) = p.label { params.push(("labels_tags", v)); }
+    if let Some(v) = p.ingredient { params.push(("ingredients_tags", v)); }
+    if let Some(v) = p.allergen { params.push(("allergens_tags", v)); }
+    if let Some(v) = p.sort_by { params.push(("sort_by", v)); }
 
-    if all {
+    if p.all {
         let all_products = fetch_all_pages("/api/v2/search", &params, client).await?;
         output.print(&Value::Array(all_products));
     } else {
@@ -157,23 +142,10 @@ fn extract_products(body: &Value) -> Vec<Value> {
         .unwrap_or_default()
 }
 
-async fn search_v1(
-    query: &str,
-    category: Option<&str>,
-    nutrition_grade: Option<&str>,
-    ecoscore_grade: Option<&str>,
-    label: Option<&str>,
-    ingredient: Option<&str>,
-    allergen: Option<&str>,
-    sort_by: Option<&str>,
-    page: u32,
-    page_size: u32,
-    all: bool,
-    client: &Client,
-    output: &Output,
-) -> Result<()> {
-    let page_str = page.to_string();
-    let page_size_str = page_size.to_string();
+async fn search_v1(p: &SearchParams<'_>, client: &Client, output: &Output) -> Result<()> {
+    let query = p.query.unwrap_or_default();
+    let page_str = p.page.to_string();
+    let page_size_str = p.page_size.to_string();
 
     let mut params: Vec<(&str, &str)> = vec![
         ("search_terms", query),
@@ -181,16 +153,16 @@ async fn search_v1(
         ("page", &page_str),
         ("page_size", &page_size_str),
     ];
-    if let Some(v) = sort_by { params.push(("sort_by", v)); }
+    if let Some(v) = p.sort_by { params.push(("sort_by", v)); }
 
     // Map filter flags to v1 tagtype triplets
     let filters: Vec<(&str, &str)> = [
-        category.map(|v| ("categories", v)),
-        nutrition_grade.map(|v| ("nutrition_grades", v)),
-        ecoscore_grade.map(|v| ("ecoscore_grade", v)),
-        label.map(|v| ("labels", v)),
-        ingredient.map(|v| ("ingredients", v)),
-        allergen.map(|v| ("allergens", v)),
+        p.category.map(|v| ("categories", v)),
+        p.nutrition_grade.map(|v| ("nutrition_grades", v)),
+        p.ecoscore_grade.map(|v| ("ecoscore_grade", v)),
+        p.label.map(|v| ("labels", v)),
+        p.ingredient.map(|v| ("ingredients", v)),
+        p.allergen.map(|v| ("allergens", v)),
     ]
     .into_iter()
     .flatten()
@@ -209,7 +181,7 @@ async fn search_v1(
         .collect();
     params.extend(tag_params.iter().copied());
 
-    if all {
+    if p.all {
         let all_products = fetch_all_pages("/cgi/search.pl", &params, client).await?;
         output.print(&Value::Array(all_products));
     } else {
