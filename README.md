@@ -1,8 +1,14 @@
-# openfoodfacts CLI
+<h1 align="center">openfoodfacts CLI</h1>
 
-[![CI](https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml)
-[![Latest Release](https://img.shields.io/github/v/release/alfredvc/openfoodfacts-cli)](https://github.com/alfredvc/openfoodfacts-cli/releases/latest)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+<p align="center">
+  <img src="docs/assets/readme-banner.jpg" alt="openfoodfacts CLI banner" width="800">
+</p>
+
+<p align="center">
+  <a href="https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml"><img src="https://github.com/alfredvc/openfoodfacts-cli/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/alfredvc/openfoodfacts-cli/releases/latest"><img src="https://img.shields.io/github/v/release/alfredvc/openfoodfacts-cli" alt="Latest Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+</p>
 
 A single-binary CLI for the [Open Food Facts](https://world.openfoodfacts.net) API.
 
